@@ -8,14 +8,18 @@ A smart, AI-powered tool that helps recruiters write personalized outreach messa
 
 ## ✨ Features
 
-* 🔗 **URL Input** — Paste any LinkedIn, GitHub, personal website, or open-source project page and the AI will analyze the profile in real time.
-* 📄 **Resume Upload** — Upload a candidate's PDF resume for instant parsing and message generation.
-* 🎯 **Personalized Messages** — References specific skills, projects, and experience from the candidate's profile.
-* 🎨 **Tone Control** — Choose from Professional, Friendly, Casual, or Enthusiastic.
-* 📬 **Platform Formats** — Optimized output for Email (with subject line), LinkedIn, or WhatsApp.
-* 📝 **Custom Notes** — Add recruiter context like urgency, culture, or perks.
-* 📋 **One-click Copy** — Copy the generated message instantly.
+**Features:**
+- 🔗 Analyze any GitHub profile, personal website, or open source page
+- 📄 Upload a candidate's resume (PDF) for instant personalization
+- 🎯 Choose tone (Professional, Friendly, Casual, Enthusiastic)
+- 💬 Supports Email, LinkedIn, WhatsApp, and WeChat
+- 🌍 Generate messages in English, 中文, 日本語, Español, Français, and Deutsch
 
+---
+
+## 📊 GitHub Stats
+
+![GitHub Stats](https://github-readme-stats.vercel.app/api?username=Echoxu101&show_icons=true&theme=default)
 ---
 
 ## 👤 Author
