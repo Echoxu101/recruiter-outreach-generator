@@ -70,6 +70,13 @@ function platformHint(p) {
   return "Start with: Subject: [subject line]\n\nThen the email body.";
 }
 
+const API_HEADERS = {
+  "Content-Type": "application/json",
+  "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
+  "anthropic-version": "2023-06-01",
+  "anthropic-dangerous-direct-browser-access": "true",
+};
+
 export default function App() {
   const [tab, setTab] = useState("url");
   const [url, setUrl] = useState("");
@@ -105,7 +112,8 @@ export default function App() {
       if (tab === "url") {
         const prompt = `Analyze this profile/page: ${url.trim()}\n\nExtract professional info (name, role, skills, projects, experience), then write a ${tone.toLowerCase()} ${platform} outreach message for the role of "${jobTitle}"${company ? ` at ${company}` : ""}.${extraNotes ? `\nRecruiter notes: ${extraNotes}` : ""}\n${platformHint(platform)}\nWrite the message in ${language}. Write only the outreach message, nothing else.`;
         const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: API_HEADERS,
           body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }),
         });
         data = await res.json();
@@ -113,7 +121,8 @@ export default function App() {
         const base64 = await toBase64(file);
         const prompt = `You are an expert tech recruiter. Based on the attached resume, write a ${tone.toLowerCase()} ${platform} outreach message for the role of "${jobTitle}"${company ? ` at ${company}` : ""}.${extraNotes ? `\nRecruiter notes: ${extraNotes}` : ""}\n- Personalize with specific details. Highlight fit. Include a call-to-action.\n${platformHint(platform)}\nWrite the message in ${language}. Write only the message.`;
         const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST", headers: { "Content-Type": "application/json" },
+          method: "POST",
+          headers: API_HEADERS,
           body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }, { type: "text", text: prompt }] }] }),
         });
         data = await res.json();
@@ -134,13 +143,11 @@ export default function App() {
       <style>{globalStyles}</style>
       <div style={{ minHeight: "100vh", background: s.bg, fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: 60 }}>
 
-        {/* NAV */}
         <nav style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1rem 5%", borderBottom: `1px solid ${s.border}`, background: s.bg, position: "sticky", top: 0, zIndex: 10 }}>
           <div style={{ fontWeight: 800, fontSize: "1rem", letterSpacing: "-.3px" }}>outreach.ai</div>
           <div style={{ background: s.text, color: s.bg, fontSize: ".72rem", fontWeight: 600, padding: ".25rem .75rem", borderRadius: 100 }}>AI-powered</div>
         </nav>
 
-        {/* HERO */}
         <div style={{ textAlign: "center", padding: "3rem 5% 2rem", maxWidth: 600, margin: "0 auto" }}>
           <div style={{ display: "inline-block", background: s.surface2, color: s.text2, fontSize: ".75rem", fontWeight: 500, padding: ".28rem .85rem", borderRadius: 100, marginBottom: "1.2rem", border: `1px solid ${s.border2}` }}>
             Built for recruiters
@@ -153,10 +160,8 @@ export default function App() {
           </p>
         </div>
 
-        {/* LAYOUT */}
         <div className="layout" style={{ maxWidth: 1000, margin: "0 auto", padding: "0 5%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.2rem", alignItems: "stretch" }}>
 
-          {/* LEFT */}
           <div style={{ background: s.surface, border: `1px solid ${s.border}`, borderRadius: 12, padding: "1.5rem", display: "flex", flexDirection: "column" }}>
             <div style={{ fontSize: ".7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, color: s.muted, marginBottom: ".8rem" }}>Candidate Profile Source</div>
 
@@ -228,7 +233,6 @@ export default function App() {
             </button>
           </div>
 
-          {/* RIGHT */}
           <div style={{ background: s.surface, border: `1px solid ${s.border}`, borderRadius: 12, padding: "1.5rem", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontSize: ".7rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, color: s.muted }}>Generated Message</div>
