@@ -1,12 +1,230 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recruiter Outreach Generator</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Recruiter Outreach Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f9f7f4;
+    --surface: #f3f0eb;
+    --surface2: #ece9e3;
+    --border: #dedad4;
+    --border2: #ccc8c2;
+    --text: #1a1a1a;
+    --text2: #5a5450;
+    --muted: #9a9490;
+    --accent: #1a1a1a;
+    --radius: 10px;
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* NAV */
+  nav {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 5%; border-bottom: 1px solid var(--border);
+    background: var(--bg); position: sticky; top: 0; z-index: 10;
+  }
+  .logo { font-weight: 700; font-size: 1rem; letter-spacing: -0.3px; color: var(--text); }
+  .badge {
+    background: var(--surface2); color: var(--text2); font-size: .72rem;
+    font-weight: 600; padding: .25rem .75rem; border-radius: 100px;
+    border: 1px solid var(--border2); letter-spacing: .2px;
+  }
+
+  /* HERO */
+  .hero { text-align: center; padding: 3.2rem 5% 2.2rem; max-width: 600px; margin: 0 auto; }
+  .hero-badge {
+    display: inline-block; background: var(--surface2); color: var(--text2);
+    font-size: .75rem; font-weight: 500; padding: .28rem .85rem;
+    border-radius: 100px; margin-bottom: 1.2rem; border: 1px solid var(--border2);
+  }
+  h1 { font-size: clamp(1.7rem, 3.5vw, 2.4rem); font-weight: 700; letter-spacing: -.8px; line-height: 1.2; margin-bottom: .75rem; color: var(--text); }
+  .hero p { color: var(--text2); font-size: .92rem; max-width: 420px; margin: 0 auto; line-height: 1.6; }
+
+  /* LAYOUT */
+  .app { max-width: 940px; margin: 0 auto; padding: 0 5% 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+  @media (max-width: 660px) { .app { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.4rem; }
+  .panel-title { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 1.2rem; }
+
+  /* FORM */
+  .field { margin-bottom: .95rem; }
+  label { display: block; font-size: .8rem; font-weight: 500; margin-bottom: .3rem; color: var(--text2); }
+  input, textarea {
+    width: 100%; padding: .55rem .8rem;
+    border: 1px solid var(--border2); border-radius: 7px;
+    font-size: .85rem; font-family: inherit;
+    background: var(--surface2); color: var(--text);
+    transition: border-color .15s; outline: none;
+  }
+  input::placeholder, textarea::placeholder { color: var(--muted); }
+  input:focus, textarea:focus { border-color: var(--text2); }
+  textarea { resize: vertical; min-height: 78px; }
+
+  .tone-row { display: flex; gap: .45rem; flex-wrap: wrap; }
+  .tone-btn {
+    padding: .3rem .75rem; border-radius: 100px;
+    border: 1px solid var(--border2); font-size: .78rem; font-weight: 500;
+    cursor: pointer; background: var(--surface2); color: var(--muted);
+    transition: all .15s;
+  }
+  .tone-btn:hover { color: var(--text2); border-color: var(--text2); }
+  .tone-btn.active { background: var(--border2); color: var(--text); border-color: var(--text2); }
+
+  .generate-btn {
+    width: 100%; margin-top: .6rem; padding: .7rem;
+    background: var(--text); color: var(--bg); border: none;
+    border-radius: 8px; font-size: .9rem; font-weight: 700;
+    cursor: pointer; transition: opacity .2s; letter-spacing: -.1px;
+  }
+  .generate-btn:hover { opacity: .85; }
+
+  /* OUTPUT */
+  .output-panel { display: flex; flex-direction: column; }
+  .output-box {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem 1.1rem; font-size: .85rem;
+    line-height: 1.75; color: var(--text); min-height: 220px; white-space: pre-wrap;
+  }
+  .placeholder-text { color: var(--muted); font-style: italic; font-size: .83rem; }
+
+  .output-actions { display: flex; gap: .5rem; margin-top: .8rem; }
+  .action-btn {
+    flex: 1; padding: .55rem; border-radius: 7px; font-size: .8rem; font-weight: 600;
+    cursor: pointer; transition: all .15s; border: 1px solid var(--border2);
+    background: var(--surface2); color: var(--text2);
+  }
+  .action-btn:hover { border-color: var(--text2); color: var(--text); }
+  .action-btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .action-btn.primary:hover { opacity: .82; }
+
+  .char-count { font-size: .72rem; color: var(--muted); margin-top: .45rem; text-align: right; }
+
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: var(--text); color: var(--bg); padding: .55rem 1.3rem;
+    border-radius: 100px; font-size: .82rem; font-weight: 600;
+    opacity: 0; transition: all .25s; pointer-events: none; z-index: 99;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">outreach.ai</div>
+  <div class="badge">AI-powered</div>
+</nav>
+
+<div class="hero">
+  <div class="hero-badge">👋 For recruiters, by recruiters</div>
+  <h1>Write better outreach<br/>in seconds</h1>
+  <p>Generate personalized, human-sounding messages for candidates - no more copy-paste templates.</p>
+</div>
+
+<div class="app">
+  <div class="panel">
+    <div class="panel-title">Candidate & Role Info</div>
+    <div class="field">
+      <label>Candidate Name</label>
+      <input type="text" id="candidateName" placeholder="e.g. Alex Chen"/>
+    </div>
+    <div class="field">
+      <label>Candidate's Current Role</label>
+      <input type="text" id="candidateRole" placeholder="e.g. Senior ML Engineer at Google"/>
+    </div>
+    <div class="field">
+      <label>Job Title You're Hiring For</label>
+      <input type="text" id="jobTitle" placeholder="e.g. Staff ML Engineer"/>
+    </div>
+    <div class="field">
+      <label>Company Name</label>
+      <input type="text" id="company" placeholder="e.g. MeshyAI"/>
+    </div>
+    <div class="field">
+      <label>Why they're a great fit</label>
+      <textarea id="fitReason" placeholder="e.g. Their work on 3D generative models aligns perfectly with our pipeline..."></textarea>
+    </div>
+    <div class="field">
+      <label>Tone</label>
+      <div class="tone-row">
+        <button class="tone-btn active" onclick="setTone(this)">Friendly</button>
+        <button class="tone-btn" onclick="setTone(this)">Professional</button>
+        <button class="tone-btn" onclick="setTone(this)">Casual</button>
+        <button class="tone-btn" onclick="setTone(this)">Concise</button>
+      </div>
+    </div>
+    <button class="generate-btn" onclick="generateMessage()">Generate Message</button>
+  </div>
+
+  <div class="panel output-panel">
+    <div class="panel-title">Generated Message</div>
+    <div class="output-box" id="outputBox">
+      <span class="placeholder-text">Your personalized outreach message will appear here. Fill in the details on the left and hit Generate.</span>
+    </div>
+    <div class="char-count" id="charCount"></div>
+    <div class="output-actions">
+      <button class="action-btn" onclick="clearOutput()">↺ Clear</button>
+      <button class="action-btn" onclick="regenerate()">⟳ Regenerate</button>
+      <button class="action-btn primary" onclick="copyMessage()">⎘ Copy</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<script>
+  let activeTone = 'Friendly';
+  const templates = {
+    Friendly: d => `Hi ${d.name || 'there'},\n\nI came across your profile and was genuinely impressed by your background${d.candidateRole ? ' as ' + d.candidateRole : ''}. Your experience immediately stood out to me.\n\n${d.fitReason ? d.fitReason + '\n\n' : ''}I'm currently working on an exciting ${d.jobTitle || 'role'} opportunity at ${d.company || 'our company'} and think you could be a fantastic fit. It's a chance to work on some really meaningful problems with a talented team.\n\nWould love to connect and share more — no pressure at all! Even a quick 15-minute chat would be great.\n\nLooking forward to hearing from you,\nEcho`,
+    Professional: d => `Dear ${d.name || 'Candidate'},\n\nI hope this message finds you well. I am reaching out regarding a ${d.jobTitle || 'senior'} opportunity at ${d.company || 'our organization'} that I believe aligns closely with your professional background${d.candidateRole ? ' in ' + d.candidateRole : ''}.\n\n${d.fitReason ? d.fitReason + '\n\n' : ''}Given your experience, I believe you would bring significant value to this role. I would welcome the opportunity to discuss this further at your convenience.\n\nPlease let me know if you would be open to a brief call.\n\nBest regards,\nEcho Xu\nTechnical Recruiter`,
+    Casual: d => `Hey ${d.name || 'there'}! 👋\n\nSaw your profile and had to reach out — your work${d.candidateRole ? ' as ' + d.candidateRole : ''} is seriously impressive.\n\n${d.fitReason ? d.fitReason + '\n\n' : ''}We're building something cool at ${d.company || 'our company'} and looking for a ${d.jobTitle || 'talented person'} to join the team. Think you'd love it here.\n\nUp for a quick chat? Even 15 mins would be awesome 🙂\n\nCheers,\nEcho`,
+    Concise: d => `Hi ${d.name || 'there'},\n\nI'm Echo, a Technical Recruiter at ${d.company || 'our company'}. I'm hiring for a ${d.jobTitle || 'senior role'} and your profile${d.candidateRole ? ' (' + d.candidateRole + ')' : ''} caught my eye.\n\n${d.fitReason ? d.fitReason + '\n\n' : ''}Interested in a quick 15-min call to explore?\n\nBest,\nEcho`
+  };
+
+  function setTone(btn) {
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeTone = btn.textContent;
+  }
+  function getInputs() {
+    return {
+      name: document.getElementById('candidateName').value.trim(),
+      candidateRole: document.getElementById('candidateRole').value.trim(),
+      jobTitle: document.getElementById('jobTitle').value.trim(),
+      company: document.getElementById('company').value.trim(),
+      fitReason: document.getElementById('fitReason').value.trim(),
+    };
+  }
+  function generateMessage() {
+    const msg = templates[activeTone](getInputs());
+    const box = document.getElementById('outputBox');
+    box.textContent = msg;
+    document.getElementById('charCount').textContent = msg.length + ' characters';
+  }
+  function regenerate() {
+    const tones = Object.keys(templates);
+    const next = tones[(tones.indexOf(activeTone) + 1) % tones.length];
+    document.querySelectorAll('.tone-btn').forEach(b => b.classList.toggle('active', b.textContent === next));
+    activeTone = next;
+    generateMessage();
+  }
+  function clearOutput() {
+    document.getElementById('outputBox').innerHTML = '<span class="placeholder-text">Your personalized outreach message will appear here. Fill in the details on the left and hit Generate.</span>';
+    document.getElementById('charCount').textContent = '';
+  }
+  function copyMessage() {
+    const text = document.getElementById('outputBox').textContent;
+    if (!text || text.includes('will appear here')) return;
+    navigator.clipboard.writeText(text).then(() => {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    });
+  }
+</script>
+</body>
 </html>
