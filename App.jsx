@@ -64,18 +64,6 @@ const inputSt = {
   fontFamily: "inherit", background: s.surface2, color: s.text,
 };
 
-function platformHint(p) {
-  if (p === "LinkedIn") return "Keep under 300 chars.";
-  if (p === "WhatsApp" || p === "WeChat") return "Keep conversational and brief.";
-  return "Start with: Subject: [subject line]\n\nThen the email body.";
-}
-
-const API_HEADERS = {
-  "Content-Type": "application/json",
-  "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY,
-  "anthropic-version": "2023-06-01",
-  "anthropic-dangerous-direct-browser-access": "true",
-};
 
 export default function App() {
   const [tab, setTab] = useState("url");
@@ -108,27 +96,22 @@ export default function App() {
 
     setLoading(true); setResult("");
     try {
-      let data;
-      if (tab === "url") {
-        const prompt = `Analyze this profile/page: ${url.trim()}\n\nExtract professional info (name, role, skills, projects, experience), then write a ${tone.toLowerCase()} ${platform} outreach message for the role of "${jobTitle}"${company ? ` at ${company}` : ""}.${extraNotes ? `\nRecruiter notes: ${extraNotes}` : ""}\n${platformHint(platform)}\nWrite the message in ${language}. Write only the outreach message, nothing else.`;
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: API_HEADERS,
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, tools: [{ type: "web_search_20250305", name: "web_search" }], messages: [{ role: "user", content: prompt }] }),
-        });
-        data = await res.json();
-      } else {
-        const base64 = await toBase64(file);
-        const prompt = `You are an expert tech recruiter. Based on the attached resume, write a ${tone.toLowerCase()} ${platform} outreach message for the role of "${jobTitle}"${company ? ` at ${company}` : ""}.${extraNotes ? `\nRecruiter notes: ${extraNotes}` : ""}\n- Personalize with specific details. Highlight fit. Include a call-to-action.\n${platformHint(platform)}\nWrite the message in ${language}. Write only the message.`;
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: API_HEADERS,
-          body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: [{ type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } }, { type: "text", text: prompt }] }] }),
-        });
-        data = await res.json();
+      const payload = {
+        mode: tab,
+        url: url.trim(),
+        jobTitle, company, tone, platform, language, extraNotes,
+      };
+      if (tab === "resume") {
+        payload.resumeBase64 = await toBase64(file);
       }
-      if (data.error) throw new Error(data.error.message);
-      setResult(data.content.filter(b => b.type === "text").map(b => b.text).join("\n").trim());
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Request failed");
+      setResult(data.message);
     } catch (e) { setError("Something went wrong: " + e.message); }
     setLoading(false);
   };
