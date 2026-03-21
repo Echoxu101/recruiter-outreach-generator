@@ -1,8 +1,12 @@
-import { useState, useRef } from "react";
+import { useState, useRef, type CSSProperties, type ReactNode } from "react";
 
-const TONES = ["Professional", "Friendly", "Casual", "Enthusiastic"];
-const PLATFORMS = ["Email", "LinkedIn", "WhatsApp", "WeChat"];
-const LANGUAGES = ["English", "中文", "日本語", "Español", "Français", "Deutsch"];
+const TONES = ["Professional", "Friendly", "Casual", "Enthusiastic"] as const;
+const PLATFORMS = ["Email", "LinkedIn", "WhatsApp", "WeChat"] as const;
+const LANGUAGES = ["English", "中文", "日本語", "Español", "Français", "Deutsch"] as const;
+
+type Tone = typeof TONES[number];
+type Platform = typeof PLATFORMS[number];
+type Language = typeof LANGUAGES[number];
 
 const s = {
   bg: "#f9f7f4", surface: "#f3f0eb", surface2: "#ece9e3",
@@ -20,7 +24,7 @@ const globalStyles = `
   @media (max-width: 700px) { .layout { grid-template-columns: 1fr !important; } }
 `;
 
-function Pill({ active, onClick, children }) {
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button onClick={onClick} style={{
       padding: "5px 14px", borderRadius: 100, fontFamily: "inherit",
@@ -32,7 +36,7 @@ function Pill({ active, onClick, children }) {
   );
 }
 
-function TabBtn({ active, onClick, children }) {
+function TabBtn({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button onClick={onClick} style={{
       padding: "7px 18px", borderRadius: 8, fontFamily: "inherit",
@@ -44,7 +48,9 @@ function TabBtn({ active, onClick, children }) {
   );
 }
 
-function Field({ label, required, hint, optional, children }) {
+function Field({ label, required, hint, optional, children }: {
+  label: string; required?: boolean; hint?: string; optional?: boolean; children: ReactNode;
+}) {
   return (
     <div style={{ marginBottom: "1rem" }}>
       <label style={{ display: "block", fontSize: ".8rem", fontWeight: 600, color: s.text2, marginBottom: 4 }}>
@@ -58,7 +64,7 @@ function Field({ label, required, hint, optional, children }) {
   );
 }
 
-const inputSt = {
+const inputSt: CSSProperties = {
   width: "100%", padding: "9px 11px", borderRadius: 8,
   border: `1.5px solid ${s.border2}`, fontSize: ".85rem",
   fontFamily: "inherit", background: s.surface2, color: s.text,
@@ -66,24 +72,24 @@ const inputSt = {
 
 
 export default function App() {
-  const [tab, setTab] = useState("url");
+  const [tab, setTab] = useState<"url" | "resume">("url");
   const [url, setUrl] = useState("");
-  const [file, setFile] = useState(null);
+  const [file, setFile] = useState<File | null>(null);
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
-  const [tone, setTone] = useState("Professional");
-  const [platform, setPlatform] = useState("Email");
-  const [language, setLanguage] = useState("English");
+  const [tone, setTone] = useState<Tone>("Professional");
+  const [platform, setPlatform] = useState<Platform>("Email");
+  const [language, setLanguage] = useState<Language>("English");
   const [extraNotes, setExtraNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const fileRef = useRef();
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const toBase64 = f => new Promise((res, rej) => {
+  const toBase64 = (f: File): Promise<string> => new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload = () => res(r.result.split(",")[1]);
+    r.onload = () => res((r.result as string).split(",")[1]);
     r.onerror = () => rej(new Error("Read failed"));
     r.readAsDataURL(f);
   });
@@ -96,13 +102,13 @@ export default function App() {
 
     setLoading(true); setResult("");
     try {
-      const payload = {
+      const payload: Record<string, string> = {
         mode: tab,
         url: url.trim(),
         jobTitle, company, tone, platform, language, extraNotes,
       };
       if (tab === "resume") {
-        payload.resumeBase64 = await toBase64(file);
+        payload.resumeBase64 = await toBase64(file!);
       }
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -112,7 +118,7 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Request failed");
       setResult(data.message);
-    } catch (e) { setError("Something went wrong: " + e.message); }
+    } catch (e) { setError("Something went wrong: " + (e as Error).message); }
     setLoading(false);
   };
 
@@ -159,14 +165,14 @@ export default function App() {
               </Field>
             ) : (
               <Field label="Resume PDF">
-                <div onClick={() => fileRef.current.click()} style={{ border: `2px dashed ${s.border2}`, borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: s.surface2 }}>
+                <div onClick={() => fileRef.current?.click()} style={{ border: `2px dashed ${s.border2}`, borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: s.surface2 }}>
                   {file ? (
                     <><div style={{ fontSize: 24 }}>📄</div><div style={{ fontWeight: 600, color: s.text, marginTop: 4 }}>{file.name}</div><div style={{ fontSize: 12, color: s.muted }}>{(file.size / 1024).toFixed(1)} KB</div></>
                   ) : (
                     <><div style={{ fontSize: 28 }}>⬆️</div><div style={{ color: s.text2, fontWeight: 600, marginTop: 4, fontSize: 14 }}>Click to upload PDF</div><div style={{ fontSize: 12, color: s.muted }}>PDF files only</div></>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept="application/pdf" style={{ display: "none" }} onChange={e => setFile(e.target.files[0])} />
+                <input ref={fileRef} type="file" accept="application/pdf" style={{ display: "none" }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
               </Field>
             )}
 
