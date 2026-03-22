@@ -1,15 +1,34 @@
-function platformHint(p) {
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+function platformHint(p: string): string {
   if (p === "LinkedIn") return "Keep under 300 chars.";
   if (p === "WhatsApp" || p === "WeChat") return "Keep conversational and brief.";
   return "Start with: Subject: [subject line]\n\nThen the email body.";
 }
 
-export default async function handler(req, res) {
+interface GenerateRequestBody {
+  mode: "url" | "resume";
+  url?: string;
+  jobTitle: string;
+  company?: string;
+  tone: string;
+  platform: string;
+  language: string;
+  extraNotes?: string;
+  resumeBase64?: string;
+}
+
+interface GeminiPart {
+  text?: string;
+  inlineData?: { mimeType: string; data: string };
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { mode, url, jobTitle, company, tone, platform, language, extraNotes, resumeBase64 } = req.body;
+  const { mode, url, jobTitle, company, tone, platform, language, extraNotes, resumeBase64 } = req.body as GenerateRequestBody;
 
   if (!jobTitle) {
     return res.status(400).json({ error: "Job title is required." });
@@ -27,7 +46,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const parts = [];
+    const parts: GeminiPart[] = [];
 
     if (mode === "url") {
       const prompt = `Analyze this profile/page: ${url}\n\nExtract professional info (name, role, skills, projects, experience), then write a ${tone.toLowerCase()} ${platform} outreach message for the role of "${jobTitle}"${company ? ` at ${company}` : ""}.${extraNotes ? `\nRecruiter notes: ${extraNotes}` : ""}\n${platformHint(platform)}\nWrite the message in ${language}. Write only the outreach message, nothing else.`;
@@ -35,7 +54,7 @@ export default async function handler(req, res) {
     } else {
       const prompt = `You are an expert tech recruiter. Based on the attached resume, write a ${tone.toLowerCase()} ${platform} outreach message for the role of "${jobTitle}"${company ? ` at ${company}` : ""}.${extraNotes ? `\nRecruiter notes: ${extraNotes}` : ""}\n- Personalize with specific details. Highlight fit. Include a call-to-action.\n${platformHint(platform)}\nWrite the message in ${language}. Write only the message.`;
       parts.push(
-        { inlineData: { mimeType: "application/pdf", data: resumeBase64 } },
+        { inlineData: { mimeType: "application/pdf", data: resumeBase64! } },
         { text: prompt },
       );
     }
@@ -53,15 +72,16 @@ export default async function handler(req, res) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data: any = await response.json();
 
     if (data.error) {
       return res.status(response.status).json({ error: data.error.message });
     }
 
     const message = data.candidates?.[0]?.content?.parts
-      ?.filter((p) => p.text)
-      .map((p) => p.text)
+      ?.filter((p: GeminiPart) => p.text)
+      .map((p: GeminiPart) => p.text)
       .join("\n")
       .trim();
 
@@ -71,6 +91,6 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ message });
   } catch (e) {
-    return res.status(500).json({ error: "Failed to generate message: " + e.message });
+    return res.status(500).json({ error: "Failed to generate message: " + (e as Error).message });
   }
 }
